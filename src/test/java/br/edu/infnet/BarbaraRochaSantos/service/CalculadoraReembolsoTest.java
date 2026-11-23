@@ -180,4 +180,36 @@ class CalculadoraReembolsoTest {
         assertEquals(3, historicoFake.buscarPorPaciente(pacienteFiel).size());
     }
 
+    // VALIDAÇÕES DE ENTRADA E EXCEÇÕES (ETAPA 12)
+    @Test
+    @DisplayName("Deve lançar exceção quando o valor da consulta for negativo")
+    void deveLancarExcecaoValorConsultaNegativo() {
+        Paciente pacienteDummy = criarPacienteDummy();
+
+        assertThrows(IllegalArgumentException.class, () ->
+                calculadora.calcularReembolso(-50.00, 70.0, pacienteDummy)
+        );
+    }
+
+    @Test
+    @DisplayName("Deve lançar exceção quando o percentual de cobertura for menor que 0 ou maior que 100")
+    void deveLancarExcecaoPercentualInvalido() {
+        Paciente pacienteDummy = criarPacienteDummy();
+
+        assertThrows(IllegalArgumentException.class, () ->
+                calculadora.calcularReembolso(200.00, -10.0, pacienteDummy)
+        );
+        assertThrows(IllegalArgumentException.class, () ->
+                calculadora.calcularReembolso(200.00, 120.0, pacienteDummy)
+        );
+    }
+
+    @Test
+    @DisplayName("Deve lançar exceção quando o paciente for nulo")
+    void deveLancarExcecaoPacienteNulo() {
+        assertThrows(IllegalArgumentException.class, () ->
+                calculadora.calcularReembolso(200.00, 70.0, null)
+        );
+    }
+
 }

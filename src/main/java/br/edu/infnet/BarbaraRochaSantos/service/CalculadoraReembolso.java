@@ -11,6 +11,7 @@ package br.edu.infnet.BarbaraRochaSantos.service;
 - Etapa 9: aplica teto máximo de R$ 150,00 por consulta antes de retornar e auditar.
 - Etapa 10: registra a consulta no HistoricoConsultas quando disponível (permitindo testar com Fake).
 - Etapa 11: concede bônus de +10% na cobertura (limitado a 100%) para pacientes com 2+ consultas anteriores.
+- Etapa 12: valida entradas inválidas lançando IllegalArgumentException.
  */
 
 import br.edu.infnet.BarbaraRochaSantos.model.Consulta;
@@ -43,11 +44,13 @@ public class CalculadoraReembolso {
     }
 
     public double calcularReembolso(double valorConsulta, double percentualCobertura, Paciente paciente) {
+        validarEntradas(valorConsulta, percentualCobertura, paciente);
+
         double percentualEfetivo = calcularPercentualComFidelidade(percentualCobertura, paciente);
         double valorCalculado = valorConsulta * (percentualEfetivo / 100.0);
         double valorReembolso = Math.min(valorCalculado, TETO_REEMBOLSO_CONSULTA);
 
-        if (historicoConsultas != null && paciente != null) {
+        if (historicoConsultas != null) {
             Consulta consultaRegistrada = new Consulta(
                     paciente,
                     valorConsulta,
@@ -70,8 +73,20 @@ public class CalculadoraReembolso {
         return calcularReembolso(valorConsulta, percentualCobertura, paciente);
     }
 
+    private void validarEntradas(double valorConsulta, double percentualCobertura, Paciente paciente) {
+        if (paciente == null) {
+            throw new IllegalArgumentException("O paciente não pode ser nulo.");
+        }
+        if (valorConsulta < 0.0) {
+            throw new IllegalArgumentException("O valor da consulta não pode ser negativo.");
+        }
+        if (percentualCobertura < 0.0 || percentualCobertura > 100.0) {
+            throw new IllegalArgumentException("O percentual de cobertura deve estar entre 0 e 100.");
+        }
+    }
+
     private double calcularPercentualComFidelidade(double percentualBase, Paciente paciente) {
-        if (historicoConsultas == null || paciente == null || percentualBase <= 0.0) {
+        if (historicoConsultas == null || percentualBase <= 0.0) {
             return percentualBase;
         }
 
