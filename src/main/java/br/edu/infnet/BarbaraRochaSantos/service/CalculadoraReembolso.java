@@ -12,16 +12,19 @@ package br.edu.infnet.BarbaraRochaSantos.service;
 - Etapa 10: registra a consulta no HistoricoConsultas quando disponível (permitindo testar com Fake).
 - Etapa 11: concede bônus de +10% na cobertura (limitado a 100%) para pacientes com 2+ consultas anteriores.
 - Etapa 12: valida entradas inválidas lançando IllegalArgumentException.
+- Etapa 13: limita o reembolso ao saldo restante do teto anual de R$ 500,00 com base no histórico.
  */
 
 import br.edu.infnet.BarbaraRochaSantos.model.Consulta;
 import br.edu.infnet.BarbaraRochaSantos.model.Paciente;
 
 import java.time.LocalDate;
+import java.util.List;
 
 public class CalculadoraReembolso {
 
     private static final double TETO_REEMBOLSO_CONSULTA = 150.00;
+    private static final double TETO_REEMBOLSO_ANUAL = 500.00;
     private static final int MINIMO_CONSULTAS_FIDELIDADE = 2;
     private static final double BONUS_FIDELIDADE_PERCENTUAL = 10.0;
 
@@ -48,7 +51,8 @@ public class CalculadoraReembolso {
 
         double percentualEfetivo = calcularPercentualComFidelidade(percentualCobertura, paciente);
         double valorCalculado = valorConsulta * (percentualEfetivo / 100.0);
-        double valorReembolso = Math.min(valorCalculado, TETO_REEMBOLSO_CONSULTA);
+        double valorLimitadoConsulta = Math.min(valorCalculado, TETO_REEMBOLSO_CONSULTA);
+        double valorReembolso = aplicarTetoAnual(valorLimitadoConsulta, paciente);
 
         if (historicoConsultas != null) {
             Consulta consultaRegistrada = new Consulta(
@@ -96,5 +100,25 @@ public class CalculadoraReembolso {
         }
 
         return percentualBase;
+    }
+
+    private double aplicarTetoAnual(double valorPretendido, Paciente paciente) {
+        if (historicoConsultas == null) {
+            return valorPretendido;
+        }
+
+        int anoAtual = LocalDate.now().getYear();
+        List<Consulta> consultasPaciente = historicoConsultas.buscarPorPaciente(paciente);
+
+        double totalReembolsadoNoAno = 0.0;
+        for (Consulta consulta : consultasPaciente) {
+            if (consulta.getData() != null && consulta.getData().getYear() == anoAtual) {
+                double reembolsoConsulta = consulta.getValor() * (consulta.getPercentualCobertura() / 100.0);
+                totalReembolsadoNoAno += Math.min(reembolsoConsulta, TETO_REEMBOLSO_CONSULTA);
+            }
+        }
+
+        double saldoDisponivelAno = Math.max(0.0, TETO_REEMBOLSO_ANUAL - totalReembolsadoNoAno);
+        return Math.min(valorPretendido, saldoDisponivelAno);
     }
 }

@@ -6,6 +6,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDate;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 /*Testes unitários da classe CalculadoraReembolso.
@@ -210,6 +212,31 @@ class CalculadoraReembolsoTest {
         assertThrows(IllegalArgumentException.class, () ->
                 calculadora.calcularReembolso(200.00, 70.0, null)
         );
+    }
+
+    // LIMITE ANUAL DE REEMBOLSO COM HISTÓRICO FAKE (ETAPA 13)
+    @Test
+    @DisplayName("Deve limitar o reembolso ao saldo restante do teto anual de R$ 500 com histórico Fake")
+    void deveRespeitarLimiteAnualComHistorico() {
+        HistoricoConsultas historicoFake = new HistoricoConsultasFake();
+        AuditoriaReembolso auditoriaMock = org.mockito.Mockito.mock(AuditoriaReembolso.class);
+        Paciente pacienteLimite = new Paciente("pac-limite", "Carlos Eduardo");
+        PlanoSaude planoStub = new PlanoSaudeStub(50.0);
+
+        // 4 consultas de R$ 200,00 com 50% de cobertura = R$ 100,00 cada -> R$ 400,00 acumulados no ano
+        LocalDate dataNoAnoAtual = LocalDate.of(LocalDate.now().getYear(), 1, 15);
+        for (int i = 0; i < 4; i++) {
+            historicoFake.registrarConsulta(new Consulta(pacienteLimite, 200.00, 50.0, dataNoAnoAtual.plusDays(i)));
+        }
+
+        CalculadoraReembolso calculadoraLimiteAnual = new CalculadoraReembolso(auditoriaMock, historicoFake);
+
+        // 50% de R$ 300,00 seria R$ 150,00, mas só restam R$ 100,00 do limite anual de R$ 500,00
+        double reembolso = calculadoraLimiteAnual.calcularReembolso(300.00, planoStub, pacienteLimite);
+
+        assertEquals(100.00, reembolso);
+        org.mockito.Mockito.verify(auditoriaMock, org.mockito.Mockito.times(1))
+                .registrarReembolso(pacienteLimite, 100.00);
     }
 
 }
