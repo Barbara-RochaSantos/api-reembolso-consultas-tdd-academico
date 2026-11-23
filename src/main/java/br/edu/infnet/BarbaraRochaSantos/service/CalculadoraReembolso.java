@@ -10,6 +10,7 @@ package br.edu.infnet.BarbaraRochaSantos.service;
 - Etapa 8: evita registrar auditoria quando o valor do reembolso for zero.
 - Etapa 9: aplica teto máximo de R$ 150,00 por consulta antes de retornar e auditar.
 - Etapa 10: registra a consulta no HistoricoConsultas quando disponível (permitindo testar com Fake).
+- Etapa 11: concede bônus de +10% na cobertura (limitado a 100%) para pacientes com 2+ consultas anteriores.
  */
 
 import br.edu.infnet.BarbaraRochaSantos.model.Consulta;
@@ -20,6 +21,8 @@ import java.time.LocalDate;
 public class CalculadoraReembolso {
 
     private static final double TETO_REEMBOLSO_CONSULTA = 150.00;
+    private static final int MINIMO_CONSULTAS_FIDELIDADE = 2;
+    private static final double BONUS_FIDELIDADE_PERCENTUAL = 10.0;
 
     private final AuditoriaReembolso auditoria;
     private final HistoricoConsultas historicoConsultas;
@@ -40,14 +43,15 @@ public class CalculadoraReembolso {
     }
 
     public double calcularReembolso(double valorConsulta, double percentualCobertura, Paciente paciente) {
-        double valorCalculado = valorConsulta * (percentualCobertura / 100.0);
+        double percentualEfetivo = calcularPercentualComFidelidade(percentualCobertura, paciente);
+        double valorCalculado = valorConsulta * (percentualEfetivo / 100.0);
         double valorReembolso = Math.min(valorCalculado, TETO_REEMBOLSO_CONSULTA);
 
         if (historicoConsultas != null && paciente != null) {
             Consulta consultaRegistrada = new Consulta(
                     paciente,
                     valorConsulta,
-                    percentualCobertura,
+                    percentualEfetivo,
                     LocalDate.now()
             );
             historicoConsultas.registrarConsulta(consultaRegistrada);
@@ -64,5 +68,18 @@ public class CalculadoraReembolso {
         // Obtém o percentual fixo fornecido pelo PlanoSaude (ou Stub nos testes) e reaproveita o cálculo base
         double percentualCobertura = (planoSaude != null) ? planoSaude.obterPercentualCobertura() : 0.0;
         return calcularReembolso(valorConsulta, percentualCobertura, paciente);
+    }
+
+    private double calcularPercentualComFidelidade(double percentualBase, Paciente paciente) {
+        if (historicoConsultas == null || paciente == null || percentualBase <= 0.0) {
+            return percentualBase;
+        }
+
+        int consultasAnteriores = historicoConsultas.buscarPorPaciente(paciente).size();
+        if (consultasAnteriores >= MINIMO_CONSULTAS_FIDELIDADE) {
+            return Math.min(percentualBase + BONUS_FIDELIDADE_PERCENTUAL, 100.0);
+        }
+
+        return percentualBase;
     }
 }
