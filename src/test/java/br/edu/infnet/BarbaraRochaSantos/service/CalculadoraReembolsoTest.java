@@ -1,5 +1,6 @@
 package br.edu.infnet.BarbaraRochaSantos.service;
 
+import br.edu.infnet.BarbaraRochaSantos.model.Paciente;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
