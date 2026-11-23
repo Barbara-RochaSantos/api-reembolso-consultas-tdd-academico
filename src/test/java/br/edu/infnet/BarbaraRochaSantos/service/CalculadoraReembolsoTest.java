@@ -73,4 +73,21 @@ class CalculadoraReembolsoTest {
         assertEquals(140.00, reembolso);
     }
 
+    // SPY DE AUDITORIA DE REEMBOLSO
+    @Test
+    @DisplayName("Deve registrar chamada na auditoria ao calcular reembolso usando Spy")
+    void deveRegistrarAuditoriaComSpy() {
+        AuditoriaReembolsoSpy auditoriaSpy = new AuditoriaReembolsoSpy();
+        CalculadoraReembolso calculadoraComAuditoria = new CalculadoraReembolso(auditoriaSpy);
+        Paciente pacienteDummy = criarPacienteDummy();
+        PlanoSaude planoStub = new PlanoSaudeStub(70.0);
+
+        double reembolso = calculadoraComAuditoria.calcularReembolso(200.00, planoStub, pacienteDummy);
+
+        assertEquals(140.00, reembolso);
+        assertEquals(1, auditoriaSpy.getQuantidadeChamadas());
+        assertEquals(pacienteDummy, auditoriaSpy.getUltimoPaciente());
+        assertEquals(140.00, auditoriaSpy.getUltimoValorReembolso());
+    }
+
 }
