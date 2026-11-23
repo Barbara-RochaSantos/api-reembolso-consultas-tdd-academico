@@ -7,6 +7,7 @@ package br.edu.infnet.BarbaraRochaSantos.service;
 - Etapa 6: permite calcular reembolso obtendo o percentual de cobertura a partir de PlanoSaude
 - (permitindo isolar o teste com um Stub de PlanoSaude).
 - Etapa 7: suporta auditoria de reembolso (permitindo testar interações com Spy).
+- Etapa 8: evita registrar auditoria quando o valor do reembolso for zero.
  */
 
 import br.edu.infnet.BarbaraRochaSantos.model.Paciente;
@@ -27,7 +28,7 @@ public class CalculadoraReembolso {
         // 'paciente' ainda não altera o cálculo (atuação como Dummy nos testes desta etapa)
         double valorReembolso = valorConsulta * (percentualCobertura / 100.0);
 
-        if (auditoria != null) {
+        if (auditoria != null && valorReembolso > 0.0) {
             auditoria.registrarReembolso(paciente, valorReembolso);
         }
 

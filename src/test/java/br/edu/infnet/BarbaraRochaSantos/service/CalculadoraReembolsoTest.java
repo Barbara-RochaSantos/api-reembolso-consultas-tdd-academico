@@ -90,4 +90,34 @@ class CalculadoraReembolsoTest {
         assertEquals(140.00, auditoriaSpy.getUltimoValorReembolso());
     }
 
+    // MOCK DE AUDITORIA COM MOCKITO
+    @Test
+    @DisplayName("Deve verificar chamada na auditoria ao calcular reembolso usando Mock")
+    void deveVerificarAuditoriaComMock() {
+        AuditoriaReembolso auditoriaMock = org.mockito.Mockito.mock(AuditoriaReembolso.class);
+        CalculadoraReembolso calculadoraComMock = new CalculadoraReembolso(auditoriaMock);
+        Paciente pacienteDummy = criarPacienteDummy();
+        PlanoSaude planoStub = new PlanoSaudeStub(70.0);
+
+        double reembolso = calculadoraComMock.calcularReembolso(200.00, planoStub, pacienteDummy);
+
+        assertEquals(140.00, reembolso);
+        org.mockito.Mockito.verify(auditoriaMock, org.mockito.Mockito.times(1))
+                .registrarReembolso(pacienteDummy, 140.00);
+    }
+
+    @Test
+    @DisplayName("Não deve interagir com auditoria quando valor da consulta for zero usando Mock")
+    void naoDeveAuditarConsultaZeroComMock() {
+        AuditoriaReembolso auditoriaMock = org.mockito.Mockito.mock(AuditoriaReembolso.class);
+        CalculadoraReembolso calculadoraComMock = new CalculadoraReembolso(auditoriaMock);
+        Paciente pacienteDummy = criarPacienteDummy();
+        PlanoSaude planoStub = new PlanoSaudeStub(70.0);
+
+        double reembolso = calculadoraComMock.calcularReembolso(0.0, planoStub, pacienteDummy);
+
+        assertEquals(0.0, reembolso);
+        org.mockito.Mockito.verifyNoInteractions(auditoriaMock);
+    }
+
 }
