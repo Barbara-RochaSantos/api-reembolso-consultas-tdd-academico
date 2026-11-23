@@ -137,4 +137,21 @@ class CalculadoraReembolsoTest {
                 .registrarReembolso(pacienteDummy, 150.00);
     }
 
+    // HISTÓRICO DE CONSULTAS COM FAKE (ETAPA 10)
+    @Test
+    @DisplayName("Deve registrar consulta no histórico Fake ao calcular reembolso")
+    void deveRegistrarConsultaNoHistoricoFake() {
+        HistoricoConsultas historicoFake = new HistoricoConsultasFake();
+        AuditoriaReembolso auditoriaMock = org.mockito.Mockito.mock(AuditoriaReembolso.class);
+        CalculadoraReembolso calculadoraCompleta = new CalculadoraReembolso(auditoriaMock, historicoFake);
+        Paciente pacienteDummy = criarPacienteDummy();
+        PlanoSaude planoStub = new PlanoSaudeStub(70.0);
+
+        double reembolso = calculadoraCompleta.calcularReembolso(200.00, planoStub, pacienteDummy);
+
+        assertEquals(140.00, reembolso);
+        assertEquals(1, historicoFake.buscarPorPaciente(pacienteDummy).size());
+        assertEquals(200.00, historicoFake.buscarPorPaciente(pacienteDummy).get(0).getValor());
+    }
+
 }

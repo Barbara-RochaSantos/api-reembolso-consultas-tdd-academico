@@ -9,28 +9,49 @@ package br.edu.infnet.BarbaraRochaSantos.service;
 - Etapa 7: suporta auditoria de reembolso (permitindo testar interações com Spy).
 - Etapa 8: evita registrar auditoria quando o valor do reembolso for zero.
 - Etapa 9: aplica teto máximo de R$ 150,00 por consulta antes de retornar e auditar.
+- Etapa 10: registra a consulta no HistoricoConsultas quando disponível (permitindo testar com Fake).
  */
 
+import br.edu.infnet.BarbaraRochaSantos.model.Consulta;
 import br.edu.infnet.BarbaraRochaSantos.model.Paciente;
+
+import java.time.LocalDate;
 
 public class CalculadoraReembolso {
 
     private static final double TETO_REEMBOLSO_CONSULTA = 150.00;
 
     private final AuditoriaReembolso auditoria;
+    private final HistoricoConsultas historicoConsultas;
 
     public CalculadoraReembolso() {
         this.auditoria = null;
+        this.historicoConsultas = null;
     }
 
     public CalculadoraReembolso(AuditoriaReembolso auditoria) {
         this.auditoria = auditoria;
+        this.historicoConsultas = null;
+    }
+
+    public CalculadoraReembolso(AuditoriaReembolso auditoria, HistoricoConsultas historicoConsultas) {
+        this.auditoria = auditoria;
+        this.historicoConsultas = historicoConsultas;
     }
 
     public double calcularReembolso(double valorConsulta, double percentualCobertura, Paciente paciente) {
-        // 'paciente' ainda não altera o cálculo (atuação como Dummy nos testes desta etapa)
         double valorCalculado = valorConsulta * (percentualCobertura / 100.0);
         double valorReembolso = Math.min(valorCalculado, TETO_REEMBOLSO_CONSULTA);
+
+        if (historicoConsultas != null && paciente != null) {
+            Consulta consultaRegistrada = new Consulta(
+                    paciente,
+                    valorConsulta,
+                    percentualCobertura,
+                    LocalDate.now()
+            );
+            historicoConsultas.registrarConsulta(consultaRegistrada);
+        }
 
         if (auditoria != null && valorReembolso > 0.0) {
             auditoria.registrarReembolso(paciente, valorReembolso);
