@@ -60,4 +60,17 @@ class CalculadoraReembolsoTest {
         double reembolso = calculadora.calcularReembolso(100.0, 100.0, pacienteDummy);
         assertEquals(100.0, reembolso);
     }
+
+    // STUB DE PLANO DE SAÚDE
+    @Test
+    @DisplayName("Deve calcular reembolso usando percentual retornado por Stub de Plano de Saúde")
+    void deveCalcularReembolsoComStub() {
+        PlanoSaude planoStub = new PlanoSaudeStub(70.0);
+        Paciente pacienteDummy = criarPacienteDummy();
+
+        double reembolso = calculadora.calcularReembolso(200.00, planoStub, pacienteDummy);
+
+        assertEquals(140.00, reembolso);
+    }
+
 }
