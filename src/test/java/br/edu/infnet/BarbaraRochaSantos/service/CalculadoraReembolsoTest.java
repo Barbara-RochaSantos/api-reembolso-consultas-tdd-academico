@@ -120,4 +120,21 @@ class CalculadoraReembolsoTest {
         org.mockito.Mockito.verifyNoInteractions(auditoriaMock);
     }
 
+    // TETO DE REEMBOLSO POR CONSULTA (ETAPA 9)
+    @Test
+    @DisplayName("Deve limitar o reembolso ao teto máximo de R$ 150 por consulta")
+    void deveAplicarTetoMaximoReembolso() {
+        AuditoriaReembolso auditoriaMock = org.mockito.Mockito.mock(AuditoriaReembolso.class);
+        CalculadoraReembolso calculadoraComTeto = new CalculadoraReembolso(auditoriaMock);
+        Paciente pacienteDummy = criarPacienteDummy();
+        PlanoSaude planoStub = new PlanoSaudeStub(80.0);
+
+        // 80% de R$ 300,00 seria R$ 240,00, mas deve respeitar o teto de R$ 150,00
+        double reembolso = calculadoraComTeto.calcularReembolso(300.00, planoStub, pacienteDummy);
+
+        assertEquals(150.00, reembolso);
+        org.mockito.Mockito.verify(auditoriaMock, org.mockito.Mockito.times(1))
+                .registrarReembolso(pacienteDummy, 150.00);
+    }
+
 }

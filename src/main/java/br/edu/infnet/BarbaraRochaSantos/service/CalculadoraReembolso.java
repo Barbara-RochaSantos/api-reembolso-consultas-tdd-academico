@@ -8,11 +8,14 @@ package br.edu.infnet.BarbaraRochaSantos.service;
 - (permitindo isolar o teste com um Stub de PlanoSaude).
 - Etapa 7: suporta auditoria de reembolso (permitindo testar interações com Spy).
 - Etapa 8: evita registrar auditoria quando o valor do reembolso for zero.
+- Etapa 9: aplica teto máximo de R$ 150,00 por consulta antes de retornar e auditar.
  */
 
 import br.edu.infnet.BarbaraRochaSantos.model.Paciente;
 
 public class CalculadoraReembolso {
+
+    private static final double TETO_REEMBOLSO_CONSULTA = 150.00;
 
     private final AuditoriaReembolso auditoria;
 
@@ -26,7 +29,8 @@ public class CalculadoraReembolso {
 
     public double calcularReembolso(double valorConsulta, double percentualCobertura, Paciente paciente) {
         // 'paciente' ainda não altera o cálculo (atuação como Dummy nos testes desta etapa)
-        double valorReembolso = valorConsulta * (percentualCobertura / 100.0);
+        double valorCalculado = valorConsulta * (percentualCobertura / 100.0);
+        double valorReembolso = Math.min(valorCalculado, TETO_REEMBOLSO_CONSULTA);
 
         if (auditoria != null && valorReembolso > 0.0) {
             auditoria.registrarReembolso(paciente, valorReembolso);
